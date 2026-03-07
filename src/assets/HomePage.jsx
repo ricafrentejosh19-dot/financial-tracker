@@ -139,7 +139,7 @@ export default function FinancialTracker() {
           <div className="scard scard--balance">
             <div className="scard-icon"><img className="balance-image" src={balanceImage} /></div>
             <div>
-              <p className="scard-label">Allowance</p>
+              <p className="scard-label">Allowances</p>
               <p className={`scard-value ${balance >= 0 ? "pos" : "neg"}`}>{formatCurrency(balance)}</p>
             </div>
           </div>
