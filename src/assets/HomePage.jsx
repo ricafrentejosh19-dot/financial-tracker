@@ -109,7 +109,7 @@ export default function FinancialTracker() {
       {/* ── Sidebar Nav ── */}
       <aside className="sidenav">
         <div className="sidenav-logo">
-          <span className="logo-icon">₿</span>
+          <span className="logo-icon">₱</span>
           <span className="logo-text">Tipid-tips</span>
         </div>
         <nav className="sidenav-links">
