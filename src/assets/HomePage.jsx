@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import "./financial-tracker.css";
 import balanceImage from './images/wallet-icon.png'
 import incomeImage from './images/income.png'
@@ -114,7 +115,7 @@ export default function FinancialTracker() {
         </div>
         <nav className="sidenav-links">
           <span className="nav-item active">📊 Dashboard</span>
-          <span className="nav-item">📁 History</span>
+          <Link to="/history" className="nav-item">📁 History</Link>
           <span className="nav-item">⚙️ Settings</span>
         </nav>
         <div className="sidenav-footer">v1.0</div>

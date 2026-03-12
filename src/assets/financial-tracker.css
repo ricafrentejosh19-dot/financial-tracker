@@ -329,6 +329,11 @@ input:focus, select:focus {
   align-items: start;
 }
 
+/* on history page we don't use the right column, make the main panel full width */
+.history-content-grid {
+  grid-template-columns: 1fr;
+}
+
 /* =====================
    Panel (shared card)
    ===================== */

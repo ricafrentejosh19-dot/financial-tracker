@@ -1,0 +1,218 @@
+/* History Panel */
+.history-panel {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  padding: 22px 28px !important;
+  margin: 0 !important;          
+  /* make panel fill available grid space; no artificial cap */
+  width: 100%;
+  max-width: none;
+  /* if grid is still misbehaving, stretch the panel to the full viewport width minus sidebar and padding */
+  width: calc(100vw - var(--sidebar-w) - 60px) !important;
+  box-sizing: border-box;
+
+  min-height: 75vh;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+/* make table region scroll when panel is tall */
+.history-table-wrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  max-height: calc(60vh - 180px); /* Leaves room for controls + footer */
+  /* ensure table stretches full width */
+  width: 100%;
+}
+
+
+/* Filter and Search Controls Container */
+.history-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Search Input Styling */
+.history-search-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Sort Select Styling */
+.history-sort-select {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ddd;
+  cursor: pointer;
+}
+
+/* Table Wrapper — grows to fill available space */
+.history-table-wrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  max-height: calc(60vh - 180px); /* Leaves room for controls + footer */
+  /* ensure table stretches full width */
+  width: 100%;
+}
+
+/* table adjustments */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table th,
+.history-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-category-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+/* Empty State */
+.history-empty {
+  text-align: center;
+  padding: 3rem;
+}
+
+.history-empty-icon {
+  font-size: 3rem;
+}
+
+/* Table Styles */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table thead tr {
+  border-bottom: 2px solid #e5e7eb;
+  background-color: #1f2937;
+}
+
+.history-table th {
+  padding: 1rem;
+  font-weight: 600;
+  color: #fff;
+  text-align: left;
+}
+
+.history-table th:nth-child(4),
+.history-table th:nth-child(5),
+.history-table th:nth-child(6) {
+  text-align: center;
+}
+
+.history-table th:nth-child(4) {
+  text-align: right;
+}
+
+.history-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.2s;
+}
+.history-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.history-table td {
+  padding: 1rem;
+}
+
+.history-table td:first-child {
+  padding-left: 1.5rem;
+}
+
+/* Category Cell */
+.history-category-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Note Cell */
+.history-note-cell {
+  color: #666;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Amount Cell */
+.history-amount-cell {
+  text-align: right;
+  font-weight: 500;
+}
+
+.history-amount-cell.income {
+  color: #10b981;
+}
+
+.history-amount-cell.expense {
+  color: #ef4444;
+}
+
+/* Type Tag */
+.history-type-tag {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+
+/* Summary Footer */
+.history-summary-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.history-summary-stat {
+  text-align: center;
+}
+
+.history-summary-label {
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.history-summary-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.history-summary-income {
+  color: #10b981;
+}
+
+.history-summary-expense {
+  color: #ef4444;
+}
