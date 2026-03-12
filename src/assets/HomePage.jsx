@@ -5,11 +5,11 @@ import balanceImage from './images/wallet-icon.png'
 import incomeImage from './images/income.png'
 import expensesImage from './images/expenses.png'
 import savingsImage from './images/piggy-bank.png'
+import { supabase } from './supabaseClient'
 
 const CATEGORIES = ["Food", "Transport", "Housing", "Entertainment", "Health", "Shopping", "Allowance", "Freelance", "Other"];
 const INCOME_CATS = ["Allowance", "Freelance", "Other"];
 const EXPENSE_CATS = CATEGORIES.filter(c => !INCOME_CATS.includes(c));
-const LS_KEY = "ledger_transactions";
 
 const formatCurrency = (n) =>
   new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(n);
@@ -28,29 +28,50 @@ const TAG_COLORS = {
   Allowance: "#22c55e", Freelance: "#06b6d4", Other: "#6b7280",
 };
 
-const loadTransactions = () => {
-  try {
-    const saved = localStorage.getItem(LS_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch { return []; }
-};
-
 const defaultForm = () => ({
   type: "expense", category: "Food", amount: "", note: "",
   date: new Date().toISOString().slice(0, 10),
 });
 
 export default function FinancialTracker() {
-  const [transactions, setTransactions] = useState(loadTransactions);
+  const [transactions, setTransactions] = useState([]);
   const [form, setForm] = useState(defaultForm());
   const [filter, setFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify(transactions));
-  }, [transactions]);
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('is_deleted', false)
+        .order('date', { ascending: false });
+      if (!cancelled) {
+        if (error) console.error(error);
+        else setTransactions(data);
+        setLoading(false);
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  const fetchTransactions = async () => {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('is_deleted', false)
+      .order('date', { ascending: false });
+    if (error) console.error(error);
+    else setTransactions(data);
+  };
 
   const totalIncome = useMemo(() => transactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0), [transactions]);
   const totalExpenses = useMemo(() => transactions.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0), [transactions]);
@@ -59,7 +80,10 @@ export default function FinancialTracker() {
   const filtered = useMemo(() => {
     let txs = filter === "all" ? transactions : transactions.filter(t => t.type === filter);
     if (searchTerm) {
-      txs = txs.filter(t => t.note.toLowerCase().includes(searchTerm.toLowerCase()) || t.category.toLowerCase().includes(searchTerm.toLowerCase()));
+      txs = txs.filter(t =>
+        (t.note || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
     return txs;
   }, [transactions, filter, searchTerm]);
@@ -76,16 +100,27 @@ export default function FinancialTracker() {
   const avgExpense = transactions.filter(t => t.type === "expense").length > 0
     ? totalExpenses / transactions.filter(t => t.type === "expense").length : null;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.amount || isNaN(form.amount) || Number(form.amount) <= 0) return;
+    const payload = { ...form, amount: Number(form.amount) };
+
     if (editId !== null) {
-      setTransactions(prev => prev.map(t => t.id === editId ? { ...form, id: editId, amount: Number(form.amount) } : t));
+      const { error } = await supabase
+        .from('transactions')
+        .update(payload)
+        .eq('id', editId);
+      if (error) console.error(error);
       setEditId(null);
     } else {
-      setTransactions(prev => [{ ...form, id: Date.now(), amount: Number(form.amount) }, ...prev]);
+      const { error } = await supabase
+        .from('transactions')
+        .insert([payload]);
+      if (error) console.error(error);
     }
+
     setForm(defaultForm());
     setShowForm(false);
+    fetchTransactions();
   };
 
   const handleEdit = (t) => {
@@ -94,7 +129,14 @@ export default function FinancialTracker() {
     setShowForm(true);
   };
 
-  const handleDelete = (id) => setTransactions(prev => prev.filter(t => t.id !== id));
+  const handleDelete = async (id) => {
+    const { error } = await supabase
+      .from('transactions')
+      .update({ is_deleted: true })
+      .eq('id', id);
+    if (error) console.error(error);
+    else fetchTransactions();
+  };
 
   const handleCancel = () => { setShowForm(false); setEditId(null); setForm(defaultForm()); };
 
@@ -107,7 +149,6 @@ export default function FinancialTracker() {
 
   return (
     <div className="app">
-      {/* ── Sidebar Nav ── */}
       <aside className="sidenav">
         <div className="sidenav-logo">
           <span className="logo-icon">₱</span>
@@ -121,10 +162,7 @@ export default function FinancialTracker() {
         <div className="sidenav-footer">v1.0</div>
       </aside>
 
-      {/* ── Main Content ── */}
       <main className="main">
-
-        {/* Top bar */}
         <header className="topbar">
           <div className="topbar-left">
             <h1 className="page-title">Dashboard</h1>
@@ -135,7 +173,6 @@ export default function FinancialTracker() {
           </button>
         </header>
 
-        {/* Summary Cards */}
         <section className="summary-grid">
           <div className="scard scard--balance">
             <div className="scard-icon"><img className="balance-image" src={balanceImage} /></div>
@@ -169,7 +206,6 @@ export default function FinancialTracker() {
           </div>
         </section>
 
-        {/* Add / Edit Form */}
         {showForm && (
           <section className="form-panel">
             <h3 className="form-title">{editId ? "✏️ Edit Entry" : "➕ New Entry"}</h3>
@@ -210,10 +246,7 @@ export default function FinancialTracker() {
           </section>
         )}
 
-        {/* Bottom grid */}
         <section className="content-grid">
-
-          {/* Transactions */}
           <div className="panel">
             <div className="panel-header">
               <h2 className="panel-title">Transactions</h2>
@@ -227,38 +260,37 @@ export default function FinancialTracker() {
               </div>
             </div>
             <div className="tx-list">
-              {filtered.length === 0
-                ? <div className="tx-empty"><span>🧾</span><p>No transactions yet</p></div>
-                : filtered.map(t => (
-                  <div className="tx-row" key={t.id}>
-                    <div className="tx-cat-icon" style={{ background: TAG_COLORS[t.category] + "22", color: TAG_COLORS[t.category] }}>
-                      {CAT_ICONS[t.category]}
-                    </div>
-                    <div className="tx-info">
-                      <p className="tx-note">{t.note || t.category}</p>
-                      <div className="tx-meta">
-                        <span className="tx-tag" style={{ background: TAG_COLORS[t.category] + "22", color: TAG_COLORS[t.category] }}>
-                          {t.category}
+              {loading
+                ? <div className="tx-empty"><span>⏳</span><p>Loading...</p></div>
+                : filtered.length === 0
+                  ? <div className="tx-empty"><span>🧾</span><p>No transactions yet</p></div>
+                  : filtered.map(t => (
+                    <div className="tx-row" key={t.id}>
+                      <div className="tx-cat-icon" style={{ background: TAG_COLORS[t.category] + "22", color: TAG_COLORS[t.category] }}>
+                        {CAT_ICONS[t.category]}
+                      </div>
+                      <div className="tx-info">
+                        <p className="tx-note">{t.note || t.category}</p>
+                        <div className="tx-meta">
+                          <span className="tx-tag" style={{ background: TAG_COLORS[t.category] + "22", color: TAG_COLORS[t.category] }}>
+                            {t.category}
+                          </span>
+                          <span className="tx-date">{formatDate(t.date)}</span>
+                        </div>
+                      </div>
+                      <div className="tx-right">
+                        <span className={`tx-amount ${t.type}`}>
+                          {t.type === "income" ? "+" : "-"}{formatCurrency(t.amount)}
                         </span>
-                        <span className="tx-date">{formatDate(t.date)}</span>
+                        <button className="icon-btn edit" onClick={() => handleEdit(t)} title="Edit">✎</button>
+                        <button className="icon-btn delete" onClick={() => handleDelete(t.id)} title="Delete">✕</button>
                       </div>
                     </div>
-                    <div className="tx-right">
-                      <span className={`tx-amount ${t.type}`}>
-                        {t.type === "income" ? "+" : "-"}{formatCurrency(t.amount)}
-                      </span>
-                      <button className="icon-btn edit" onClick={() => handleEdit(t)} title="Edit">✎</button>
-                      <button className="icon-btn delete" onClick={() => handleDelete(t.id)} title="Delete">✕</button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
             </div>
           </div>
 
-          {/* Right column */}
           <div className="right-col">
-
-            {/* Spending Breakdown */}
             <div className="panel">
               <h2 className="panel-title">Spending Breakdown</h2>
               {categoryTotals.length === 0
@@ -276,7 +308,6 @@ export default function FinancialTracker() {
                 ))}
             </div>
 
-            {/* Summary stats */}
             <div className="panel stats-panel">
               <h2 className="panel-title">Quick Stats</h2>
               <div className="stat-row">
@@ -297,12 +328,9 @@ export default function FinancialTracker() {
               </div>
               <div className="stat-row">
                 <span className="stat-label">Top Expense Cat</span>
-                <span className="stat-val">
-                  {categoryTotals.length > 0 ? categoryTotals[0][0] : "—"}
-                </span>
+                <span className="stat-val">{categoryTotals.length > 0 ? categoryTotals[0][0] : "—"}</span>
               </div>
             </div>
-
           </div>
         </section>
       </main>
